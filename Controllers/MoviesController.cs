@@ -53,6 +53,23 @@ namespace Vidly.Controllers
             return View("MoviesForm", viewModel);
         }
 
+        public ActionResult Edit(int id)
+        {
+            var movie = _MoviesContext.Movies.SingleOrDefault(m => m.Id == id);
+
+            if (movie == null)
+                return HttpNotFound();
+
+            var viewModel = new MoviesFormViewModel()
+            {
+                Genres = _MoviesContext.Genres.ToList(),
+                Movie = movie
+            };
+
+            return View("MoviesForm", viewModel);
+
+        }
+
         public ActionResult Save(Movie movie)
         {
             if (movie.Id == 0)
