@@ -579,8 +579,9 @@ legend + * {
   -webkit-appearance: button;
 }
 
+
 output {
-  display: inline-block;
+    display: inline-block;
 }
 
 iframe {
