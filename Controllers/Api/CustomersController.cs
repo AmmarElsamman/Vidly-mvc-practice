@@ -1,7 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using AutoMapper;
+using System;
 using System.Linq;
-using System.Net;
 using System.Web.Http;
+using Vidly.Dtos;
 using Vidly.Models;
 
 namespace Vidly.Controllers.Api
@@ -15,65 +16,79 @@ namespace Vidly.Controllers.Api
         }
 
         // GET /api/customers 
-        public IEnumerable<Customer> GetCustomers()
+        public IHttpActionResult GetCustomers()
         {
-            return _context.Customers.ToList();
+            var CustomersDto = _context.Customers.ToList().Select(Mapper.Map<Customer, CustomerDto>);
+
+            return Ok(CustomersDto);
         }
 
         // GET /api/customes/1
-        public Customer Getcustomer(int id)
+        public IHttpActionResult Getcustomer(int id)
         {
             var customer = _context.Customers.SingleOrDefault(c => c.Id == id);
 
             if (customer == null)
-                throw new HttpResponseException(HttpStatusCode.NotFound);
-            return customer;
+                return NotFound();
+
+            return Ok(Mapper.Map<Customer, CustomerDto>(customer));
         }
 
         // POST /api/Customers
         [HttpPost]
-        public Customer CreateCustomer(Customer customer)
+        public IHttpActionResult CreateCustomer(CustomerDto customerDto)
         {
             if (!ModelState.IsValid)
-                throw new HttpResponseException(HttpStatusCode.BadRequest);
+                //instead of throwing a method we use the helper method
+                // throw new HttpResponseException(HttpStatusCode.BadRequest);
+                return BadRequest();
+
+            var customer = Mapper.Map<CustomerDto, Customer>(customerDto);
 
             _context.Customers.Add(customer);
             _context.SaveChanges();
 
-            return customer;
+            customerDto.Id = customer.Id;
+
+            //instead of returning customerDto
+            //return customerDto;
+
+            //as part of restful convention we need to return the uri of the newly created resource to the client
+            //example uri: /api/customers/10
+            return Created(new Uri(Request.RequestUri + "/" + customer.Id), customerDto);
         }
 
         // PUT /api/Customers/1
         [HttpPut]
-        public void UpdateCustomer(int id, Customer customer)
+        public IHttpActionResult UpdateCustomer(int id, CustomerDto customerDto)
         {
             if (!ModelState.IsValid)
-                throw new HttpResponseException(HttpStatusCode.BadRequest);
+                return BadRequest();
 
             var customerInDb = _context.Customers.SingleOrDefault(c => c.Id == id);
 
             if (customerInDb == null)
-                throw new HttpResponseException(HttpStatusCode.NotFound);
+                return NotFound();
 
-            customerInDb.Name = customer.Name;
-            customerInDb.Birthdate = customer.Birthdate;
-            customerInDb.MembershipTypeId = customer.MembershipTypeId;
-            customerInDb.IsSubscribedToNewsletter = customer.IsSubscribedToNewsletter;
+            Mapper.Map<CustomerDto, Customer>(customerDto, customerInDb);
 
             _context.SaveChanges();
+            return Ok();
         }
 
         // DELETE /api/customers/1
         [HttpDelete]
-        public void DeleteCustomer(int id)
+        public IHttpActionResult DeleteCustomer(int id)
         {
             var customerInDb = _context.Customers.SingleOrDefault(c => c.Id == id);
 
             if (customerInDb == null)
-                throw new HttpResponseException(HttpStatusCode.NotFound);
+                return NotFound();
 
             _context.Customers.Remove(customerInDb);
             _context.SaveChanges();
+
+            return Ok();
         }
     }
 }
